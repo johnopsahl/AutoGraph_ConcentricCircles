@@ -4,9 +4,6 @@ from scipy.optimize import root
 import svgwrite
 from PIL import Image
 
-# def calc_spiral_end(img_width, img_height):
-#     pass
-
 def calc_spiral_arc_length(theta, b):
     """Calculates arc length L of spiral r = a * theta from 0 to theta."""
     if theta == 0:
@@ -55,21 +52,6 @@ def create_segments_from_segment_points(seg_points):
 
     return np.lib.stride_tricks.sliding_window_view(seg_points, 2, axis=0).transpose(0, 2, 1)
 
-# def remove_out_of_bounds_segments(segment, x_min, x_max, y_min, y_max):
-
-#     segment_filtered = []
-#     segment = segment.tolist()
-
-#     for seg in segment:
-
-#         if (x_min <= seg[0][0] <= x_max) and (x_min <= seg[1][0] <= x_max) and \
-#             (y_min <= seg[0][1] <= y_max) and (y_min <= seg[1][1] <= y_max):
-#                 segment_filtered.append(seg)
-    
-#     segment_filtered = np.array(segment_filtered)
-
-#     return segment_filtered
-
 def remove_out_of_bounds_segments(segment, x_min, x_max, y_min, y_max):
     x_coords = segment[:, :, 0]  # shape (N, 2)
     y_coords = segment[:, :, 1]  # shape (N, 2)
@@ -83,18 +65,37 @@ def remove_out_of_bounds_segments(segment, x_min, x_max, y_min, y_max):
 
     return segment[mask]
 
-def write_segments_to_svg(filename: str, segment, stroke_width, view_box):
+def create_segment_centers(segment):
+
+    return np.mean(segment, axis=(1))
+
+def write_segments_to_svg(filename: str, segment, view_box):
     
     dwg = svgwrite.Drawing(filename + '.svg')
 
     for seg in segment:          
 
-        dwg.add(dwg.line(seg[0], seg[1], stroke=svgwrite.rgb(0, 0, 0), stroke_width=stroke_width))
+        dwg.add(dwg.line(seg[0], seg[1], stroke=svgwrite.rgb(0, 0, 0), stroke_width=0.1))
 
     dwg.viewbox(minx=view_box[0], miny=view_box[1], 
                 width=view_box[2], height=view_box[3])
     dwg.save()
 
+def write_segments_and_points_to_svg(filename, segment, seg_center, view_box):
+    
+    dwg = svgwrite.Drawing(filename + '.svg')
+
+    for seg in segment:          
+
+        dwg.add(dwg.line(seg[0], seg[1], stroke=svgwrite.rgb(0, 0, 0), stroke_width=0.1))
+
+    for pnt in seg_center:
+
+        dwg.add(dwg.circle(center=(pnt[0], pnt[1]), r=0.1, fill='blue', stroke='blue', stroke_width=0.1))
+        
+    dwg.viewbox(minx=view_box[0], miny=view_box[1], 
+                width=view_box[2], height=view_box[3])
+    dwg.save()
 
 # def convert_bitmap_to_spiral_drawing(image_filename: str, 
 #                                      a: float, b: float, 
@@ -145,7 +146,7 @@ def display_spiral_segments(a, b, segment_length, theta_end):
     segment = create_segments_from_segment_points(seg_point)
 
     view_box = [-10, -10, 20, 20]
-    write_segments_to_svg("spiral_segments", segment, 0.1, view_box)
+    write_segments_to_svg("spiral_segments", segment, view_box)
 
 def clip_spiral_segments_to_image_boundaries(a, b, segment_length, theta_end):
     
@@ -156,10 +157,26 @@ def clip_spiral_segments_to_image_boundaries(a, b, segment_length, theta_end):
     segment_filtered = remove_out_of_bounds_segments(segment, -5, 5, -5, 5)
 
     view_box = [-10, -10, 20, 20]
-    write_segments_to_svg("spiral_segments_clipped", segment_filtered, 0.1, view_box)
+    write_segments_to_svg("spiral_segments_clipped", segment_filtered, view_box)
+
+def display_spiral_segments_and_centers(a, b, segment_length, theta_end):
+    
+    seg_point = generate_spiral_segment_points(a, b, segment_length, 0, theta_end)
+
+    segment = create_segments_from_segment_points(seg_point)
+
+    segment_filtered = remove_out_of_bounds_segments(segment, -5, 5, -5, 5)
+
+    #create segment centers from segments
+    seg_center = create_segment_centers(segment_filtered)
+
+    view_box = [-10, -10, 20, 20]
+    write_segments_and_points_to_svg("spiral_segments_centers", 
+                                     segment_filtered, seg_center, view_box)
 
 if __name__ == '__main__':
 
-#     # convert_bitmap_to_spiral("margaret_gym.png", 0, 1.5, 5, theta_end)
-    # display_spiral_segments(0, 0.3, 0.5, 8*np.pi)
+    # convert_bitmap_to_spiral("margaret_gym.png", 0, 1.5, 5, theta_end)
+    display_spiral_segments(0, 0.3, 0.5, 8*np.pi)
     clip_spiral_segments_to_image_boundaries(0, 0.3, 0.5, 8*np.pi)
+    display_spiral_segments_and_centers(0, 0.05, 0.5, 64*np.pi)
