@@ -1,4 +1,4 @@
-import spiral as sprl
+import map_bitmap_to_spiral as sprl
 import numpy as np
 
 def test_calc_spiral_arc_length():
@@ -6,5 +6,3 @@ def test_calc_spiral_arc_length():
 
 def test_find_theta_from_length():
     assert sprl.find_theta_from_length(1, 1.5, 0) == 0.6276102477078693
-
-# def generate_spiral_segment_points()
