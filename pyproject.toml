@@ -11,3 +11,8 @@ dependencies = [
     "scipy>=1.17.1",
     "svgwrite>=1.4.3",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.4",
+]

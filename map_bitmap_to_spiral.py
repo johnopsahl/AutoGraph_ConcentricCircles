@@ -5,17 +5,18 @@ import svgwrite
 from PIL import Image
 from pathlib import Path
 
-def calc_spiral_arc_length(theta, b):
+def calc_spiral_arc_length(theta: float, b: float) -> float:
     """Calculates arc length L of spiral r = a * theta from 0 to theta."""
     if theta == 0:
         return 0.0
     # Exact formula for Archimedean spiral arc length
     return (b / 2.0) * (theta * np.sqrt(1 + theta**2) + np.log(theta + np.sqrt(1 + theta**2)))
 
-def find_theta_from_length(target_length, b, initial_theta_guess):
+def find_theta_from_length(target_length: float, b: float, initial_theta_guess: float) -> float:
     """Numerically solves for theta given a target arc length."""
     # Define the function whose root we want to find: f(theta) - target_L = 0
-    func = lambda t: calc_spiral_arc_length(t, b) - target_length
+    def func(t):
+        return calc_spiral_arc_length(t, b) - target_length
 
     # root() expects the function to accept and return array-like values
     result = root(func, initial_theta_guess)
@@ -25,7 +26,7 @@ def find_theta_from_length(target_length, b, initial_theta_guess):
 
     return result.x[0]
 
-def generate_spiral_segment_points(a, b, segment_length, theta_start, theta_end):
+def generate_spiral_segment_points(a: float, b: float, segment_length: float, theta_start: float, theta_end: float) -> np.ndarray:
     """Generates line segment points along an Archimedes spiral."""
 
     # Create an array of theta values from 0 to theta_end with a step size determined by the desired segment length
@@ -49,11 +50,13 @@ def generate_spiral_segment_points(a, b, segment_length, theta_start, theta_end)
 
     return np.column_stack((x,y))
 
-def create_segments_from_segment_points(seg_points):
+def create_segments_from_segment_points(seg_points: np.ndarray) -> np.ndarray:
     '''Creates line segments from an array of segment points. Each segment is defined by two consecutive points.'''
     return np.lib.stride_tricks.sliding_window_view(seg_points, 2, axis=0).transpose(0, 2, 1)
 
-def remove_out_of_bounds_segments(segment, x_min, x_max, y_min, y_max):
+def remove_out_of_bounds_segments(segment: np.ndarray, 
+                                  x_min: float, x_max: float, 
+                                  y_min: float, y_max: float) -> np.ndarray:
     '''Removes line segments that are out of bounds'''
     x_coords = segment[:, :, 0]  # shape (N, 2)
     y_coords = segment[:, :, 1]  # shape (N, 2)
@@ -67,8 +70,9 @@ def remove_out_of_bounds_segments(segment, x_min, x_max, y_min, y_max):
 
     return segment[mask]
 
-def nearest_neighbor_line_sort(lines):
-    '''Sorts line segments in a nearest neighbor order, starting from the first segment. Returns the order of indices and the sorted lines.'''
+def nearest_neighbor_line_sort(lines: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    '''Sorts line segments in a nearest neighbor order, starting from the first segment. 
+    Returns the order of indices and the sorted lines.'''
     lines = np.array(lines)
     n = len(lines)
 
@@ -111,21 +115,25 @@ def nearest_neighbor_line_sort(lines):
 
     return order, sorted_lines
 
-def write_segments_to_svg(svg_file_path, segment, segement_color, view_box):
+def write_segments_to_svg(svg_file_path: str, segment: np.ndarray, 
+                          segement_color: np.ndarray, view_box: list) -> None:
     '''Writes line segments to an svg file with color based on segment color.'''
 
     dwg = svgwrite.Drawing(str(svg_file_path) + "_spiral.svg")
 
     for i, seg in enumerate(segment):          
 
-        dwg.add(dwg.line(seg[0], seg[1], stroke=svgwrite.rgb(segement_color[i], segement_color[i], segement_color[i]), stroke_width=0.1))
+        dwg.add(dwg.line(seg[0], seg[1], stroke=svgwrite.rgb(segement_color[i], 
+                                                             segement_color[i], 
+                                                             segement_color[i]), stroke_width=0.1))
 
     dwg.viewbox(minx=view_box[0], miny=view_box[1], 
                 width=view_box[2], height=view_box[3])
     dwg.save()
 
 
-def write_segments_to_gcode(gcode_file_path, segment, segment_color, feedrate):
+def write_segments_to_gcode(gcode_file_path: str, segment: np.ndarray, 
+                            segment_color: np.ndarray, feedrate: float) -> None:
     '''Writes line segments to a gcode file with feedrate and pencil force based on segment color.'''
 
     with open(str(gcode_file_path) + "_spiral.gcode", 'w') as f:
@@ -158,9 +166,11 @@ def write_segments_to_gcode(gcode_file_path, segment, segment_color, feedrate):
     f.close()
 
 
-def map_bitmap_to_spiral(image_filename, drawing_width_mm, 
-                         spiral_center_pxl, spiral_pitch_mm, segment_length_mm):
-    '''Main function to map bitmap to spiral. Generates spiral segments, maps them to pixel colors, and writes to svg and gcode.'''
+def map_bitmap_to_spiral(image_filename: str, drawing_width_mm: float, 
+                         spiral_center_pxl: list, spiral_pitch_mm: float, 
+                         segment_length_mm: float) -> None:
+    '''Main function to map bitmap to spiral. Generates spiral segments,
+     maps them to pixel colors, and writes to svg and gcode.'''
     # Load image
     filename = Path(image_filename).stem
     ext = Path(image_filename).suffix
