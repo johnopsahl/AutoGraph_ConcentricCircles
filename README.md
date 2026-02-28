@@ -6,7 +6,7 @@ Maps a bitmap image to an archimedes spiral. Generates spiral segments, maps the
 ## Example
 
 ### Reference Image
-![Reference Image](images/margaret gym_gray.png)
+![Reference Image](images/margaret%20gym_gray.png)
 
 ### Output SVG
-![Output svg](images/margaret gym_gray_spiral.svg)
+![Output svg](images/margaret%20gym_gray_spiral.svg)
