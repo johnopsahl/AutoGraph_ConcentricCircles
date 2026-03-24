@@ -184,14 +184,19 @@ def map_bitmap_to_spiral(image_filename: str, drawing_width_mm: float,
     # Calculate drawing dimensions in mm based on desired width
     mm_per_pixel = drawing_width_mm/image_pixel_width
     drawing_height_mm = image_pixel_height*mm_per_pixel
-    drawing_hypotenuse_mm = np.sqrt(drawing_width_mm**2 + drawing_height_mm**2)
     
+    # determine greatest distance from center to a corner
+    x_corners = [0, image_pixel_width]
+    y_corners = [0, image_pixel_height]
+    corner_coords = [(x, y) for x in x_corners for y in y_corners]
+    corner_distance_pxl = max([np.linalg.norm(np.array(corner) - np.array(spiral_center_pxl)) for corner in corner_coords])
+    corner_distance_mm = corner_distance_pxl*mm_per_pixel
+
     # calculate b based on spiral pitch
     b = spiral_pitch_mm/(2*np.pi)
 
-    # using the drawing hypotenuse to determine the number of rotations,
-    # a bit hacky for all spiral center positions, but it ensures the spiral extends to the corners of the drawing
-    num_rotations = drawing_hypotenuse_mm/(4*np.pi*b) + 1 # add 1 to ensure spiral extends beyond corners of drawing
+    # use twice the distance from the center to the farthest corner to determine the number of rotations
+    num_rotations = (2*corner_distance_mm)/(4*np.pi*b) + 1 # add 1 to ensure spiral extends beyond corners of drawing
     theta_end = num_rotations*2*np.pi
 
     seg_point = generate_spiral_segment_points(0, b, segment_length_mm, 0, theta_end)
@@ -234,8 +239,8 @@ def map_bitmap_to_spiral(image_filename: str, drawing_width_mm: float,
 
 if __name__ == '__main__':
 
-    map_bitmap_to_spiral(image_filename="margaret gym_gray.png",
+    map_bitmap_to_spiral(image_filename="recurse_center_cyborg_gray.png",
                          drawing_width_mm=150,
-                         spiral_center_pxl=[325,600], 
+                         spiral_center_pxl=[425,265], 
                          spiral_pitch_mm=0.7, 
                          segment_length_mm=0.5)
